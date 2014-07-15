@@ -1,0 +1,12 @@
+{application, erlog,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { erlog_app, []}},
+  {env, []}
+ ]}.
