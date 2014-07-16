@@ -1,0 +1,4 @@
+erlog
+=====
+
+Simple Erlang Logging
