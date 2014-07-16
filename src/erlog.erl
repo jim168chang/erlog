@@ -12,7 +12,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1,
+-export([start_link/1, start_link/0,
   log/2, log/3, log/4,
   debug/1, debug/2, debug/3,
   info/1, info/2, info/3,
