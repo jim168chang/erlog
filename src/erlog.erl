@@ -66,9 +66,10 @@ init() ->
   {ok, Rec2}.
 
 init(ConfigFile) ->
-  io:format("Config File: ~p~n", [ConfigFile]),
+  file:make_dir("misc"),
   {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
-  {ok, config_loader:load_config(ConfigFile)}.
+  Ret = config_loader:load_config(ConfigFile),
+  {ok, Ret}.
 
 handle_call({reload, ConfigFile}, _From, _Config) ->
   case config_loader:load_config(ConfigFile) of
