@@ -16,3 +16,11 @@
 
 2014-7-16 8:7:7 [info] - Stopping Tests @ {1405,494427,258122}
 
+2014-7-16 9:1:19 [info] - Starting Tests @ {1405,497679,586844}
+
+2014-7-16 9:1:19 [info] - Hello World: 2
+
+2014-7-16 9:1:19 [info] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+
+2014-7-16 9:1:19 [info] - Stopping Tests @ {1405,497679,630013}
+
