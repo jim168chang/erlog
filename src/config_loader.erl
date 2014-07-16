@@ -14,7 +14,7 @@
 
 %%-compile(export_all).
 
--include("erlog.hrl").
+-include("erlog_records.hrl").
 
 load_config(ConfigFile) ->
   case file:consult(ConfigFile) of
@@ -41,7 +41,7 @@ load_record([{file_handler, FHConfig} | Rest], Rec) ->
   Rec2 = load_fh_record(FHConfig, Rec),
   load_record(Rest, Rec2);
 
-load_record([], Rec) -> Rec.
+load_record([], Rec) -> {ok, Rec}.
 
 %%-----------------------------------------------------------------
 
@@ -72,6 +72,7 @@ load_fh_record(FHConfig, Rec) ->
           [] -> ?DEFAULT_DIR;
           [{dir, D}] -> D
         end,
+  file:make_dir(Dir),
 
   Size = case lists:filter(fun(I) -> case I of {size, _Size} -> true; _ -> false end end, FHConfig) of
            [] -> ?DEFAULT_SIZE;
@@ -81,10 +82,14 @@ load_fh_record(FHConfig, Rec) ->
                [] -> ?DEFAULT_MAX_FILES;
                [{max_files, M}] -> M
              end,
-
-  FileHandler = #file_handler{name = Name, level = Level, formatter = Formatter, file = File, dir = Dir, size = Size, max_files = MaxFiles},
-  Handlers = Rec#erlog.handlers,
-  Rec#erlog{handlers = [FileHandler | Handlers]}.
+  if
+    MaxFiles =< 1 ->
+      error("Invalid Config Detected. Max files must be greater than 1");
+    true ->
+      FileHandler = #file_handler{name = Name, level = Level, formatter = Formatter, file = File, dir = Dir, size = Size, max_files = MaxFiles},
+      Handlers = Rec#erlog.handlers,
+      Rec#erlog{handlers = [FileHandler | Handlers]}
+  end.
 
 %%-----------------------------------------------------------------
 

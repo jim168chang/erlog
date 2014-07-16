@@ -33,7 +33,10 @@
 
 -define(SERVER, ?MODULE).
 
--include("erlog.hrl").
+-include("erlog_records.hrl").
+
+start_link() ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 start_link(ConfigFile) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [ConfigFile], []).
@@ -56,7 +59,14 @@ log(Level, Logger, Msg, Data) ->
 
 %%%-------------------------------------------------------------------
 
+init() ->
+  Rec = #erlog{},
+  Rec#erlog{formatters = [#formatter{}], handlers = [#console_handler{}]},
+  {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
+  {ok, Rec}.
+
 init(ConfigFile) ->
+  {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
   {ok, config_loader:load_config(ConfigFile)}.
 
 handle_call({reload, ConfigFile}, _From, _Config) ->

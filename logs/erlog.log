@@ -1,12 +1,22 @@
-2014-7-15 13:39:48 [debug] - Hello World: 2
+2014-7-16 7:20:58 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-15 13:39:48 [debug] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 7:20:58 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-15 13:39:56 [debug] - Hello World: 2
+2014-7-16 7:24:12 [none] - Hello World: 2
 
-2014-7-15 13:39:56 [debug] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 7:24:12 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-15 13:42:59 [debug] - Hello World: 2
+2014-7-16 7:24:12 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-15 13:42:59 [debug] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 7:24:52 [none] - Hello World: 2
+
+2014-7-16 7:24:52 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+
+2014-7-16 7:24:52 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+
+2014-7-16 7:25:42 [none] - Hello World: 2
+
+2014-7-16 7:25:42 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+
+2014-7-16 7:25:42 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
