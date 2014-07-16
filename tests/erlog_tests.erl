@@ -27,13 +27,12 @@ test_find_oldest() ->
 
 test_write_log() ->
   io:format("Testing log_writer:writelog/3 - "),
-  {ok, Config} = config_loader:load_config("conf/default.conf"),
   K = 2,
-  log_writer:writelog("Hello World: ~p~n", [K], Config),
+  erlog:info("Hello World: ~p~n", [K]),
   Me = {{name, "Olusegun Akintayo"}, {age, 21}, {sex, "Male"}},
-  log_writer:writelog("Me: ~p~n", [Me], Config),
+  erlog:info("Me: ~p~n", [Me]),
 
-  log_writer:writelog(debug, "Me Again: ~p~n", [Me], Config),
+  erlog:info(debug, "Me Again: ~p~n", [Me]),
 
   io:format("passed~n").
 
@@ -51,6 +50,7 @@ test_config_loader_load_config() ->
       [FileHandler | [FileHandler2 | [ConsoleHandler | [ConsoleHandler2 | Rest]] ]] = Config#erlog.handlers,
       true = is_list(Rest),
       "MFH" = FileHandler#file_handler.name,
+      "MFH2" = FileHandler2#file_handler.name,
       ?ERROR = ConsoleHandler2#console_handler.level,
       ?NONE = ConsoleHandler#console_handler.level,
       ?DEBUG = FileHandler#file_handler.level,
@@ -65,15 +65,18 @@ test_config_loader_load_config() ->
 
 test_erlog_reload_config() ->
   io:format("Testing erlog:reload_config/0 - "),
-  RetVal = erlog:reload_config("conf/default2.conf"),
+  {error, RetVal} = erlog:reload_config("conf/default2.conf"),
   io:format("Loaded Config: ~p~n", [RetVal]),
   io:format("passed~n").
 
 tests() ->
   io:format("~n~n------- Starting Tests -------~n~n"),
   erlog:start_link("conf/default.conf"),
+  erlog:info("Starting Tests @ ~p~n", [now()]),
   test_find_oldest(),
   test_config_loader_load_config(),
-  test_erlog_reload_config(),
   test_write_log(),
+  erlog:reload_config("conf/default.conf"),
+  erlog:info("Stopping Tests @ ~p~n", [now()]),
+  test_erlog_reload_config(),
   ok.

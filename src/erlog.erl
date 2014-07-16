@@ -24,7 +24,7 @@
 ]).
 
 %% gen_server callbacks
--export([init/1,
+-export([init/1,init/0,
   handle_call/3,
   handle_cast/2,
   handle_info/2,
@@ -61,28 +61,39 @@ log(Level, Logger, Msg, Data) ->
 
 init() ->
   Rec = #erlog{},
-  Rec#erlog{formatters = [#formatter{}], handlers = [#console_handler{}]},
+  Rec2 = Rec#erlog{formatters = [#formatter{}], handlers = [#console_handler{}]},
   {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
-  {ok, Rec}.
+  {ok, Rec2}.
 
 init(ConfigFile) ->
   {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
   {ok, config_loader:load_config(ConfigFile)}.
 
 handle_call({reload, ConfigFile}, _From, _Config) ->
-  {reply, ok, config_loader:load_config(ConfigFile)};
+  case config_loader:load_config(ConfigFile) of
+    {error, invalid_config_file_detected} ->
+      {reply, {error, invalid_config_file_detected}, invalid_config_file_detected};
+    _ ->
+      {reply, ok, config_loader:load_config(ConfigFile)}
+  end;
 
 handle_call(_Request, _From, Config) ->
   {reply, ok, Config}.
 
 handle_cast({log, Msg, Data}, Config) ->
-  ok;
+  {ok, Rec} = Config,
+  log_writer:writelog(Msg, Data, Rec),
+  {noreply, Config};
 
 handle_cast({log, Level, Msg, Data}, Config) ->
-  ok;
+  {ok, Rec} = Config,
+  log_writer:writelog(Level, Msg, Data, Rec),
+  {noreply, Config};
 
-handle_cast({log, Logger, Level, Msg, Data}, Config) ->
-  ok;
+handle_cast({log, _Logger, _Level, _Msg, _Data}, Config) ->
+  %%Not Yet Implemented
+  {ok, _Rec} = Config,
+  {noreply, Config};
 
 handle_cast(_Request, Config) ->
   {noreply, Config}.

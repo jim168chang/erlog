@@ -1,22 +1,18 @@
-2014-7-16 7:20:58 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:3:42 [info] - Stopping Tests @ {1405,494222,477228}
 
-2014-7-16 7:20:58 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:5:43 [info] - Starting Tests @ {1405,494343,872758}
 
-2014-7-16 7:24:12 [none] - Hello World: 2
+2014-7-16 8:5:43 [info] - Hello World: 2
 
-2014-7-16 7:24:12 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:5:43 [info] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-16 7:24:12 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:5:43 [info] - Stopping Tests @ {1405,494343,892895}
 
-2014-7-16 7:24:52 [none] - Hello World: 2
+2014-7-16 8:7:7 [info] - Starting Tests @ {1405,494427,237661}
 
-2014-7-16 7:24:52 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:7:7 [info] - Hello World: 2
 
-2014-7-16 7:24:52 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:7:7 [info] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
 
-2014-7-16 7:25:42 [none] - Hello World: 2
-
-2014-7-16 7:25:42 [none] - Me: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
-
-2014-7-16 7:25:42 [debug] - Me Again: {{name,"Olusegun Akintayo"},{age,21},{sex,"Male"}}
+2014-7-16 8:7:7 [info] - Stopping Tests @ {1405,494427,258122}
 

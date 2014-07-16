@@ -4,3 +4,4 @@ ebin
 .swp
 logs
 misc
+erl_crash.dump
