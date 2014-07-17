@@ -27,14 +27,10 @@
 -define(DEFAULT_SIZE, 4096).
 -define(DEFAULT_MAX_FILES, 100).
 
--define(DB_NAME, rotate_db).
--define(DB_FILE, filename:join("misc", "rotate_db.db")).
--define(DB_KEY, list_to_binary("last")).
+-define(ROLLER_DELAY, 5000).
 
 -record(formatter, {name=?DEFAULT_FORMATTER_NAME, format=?DEFAULT_FORMAT}).
 -record(console_handler, {name=?DEFAULT_CONSOLE_HANDLER_NAME, level=?NONE, formatter=#formatter{}}).
 -record(file_handler, {name=?DEFAULT_FILE_HANDLER_NAME, level=?NONE, file=?DEFAULT_FILE, dir=?DEFAULT_DIR,
                         size=?DEFAULT_SIZE, max_files=?DEFAULT_MAX_FILES, formatter=#formatter{}}).
 -record(erlog, {formatters=[], handlers=[]}).
-
--record(log, {level, logger, msg, data}).

@@ -19,12 +19,11 @@
   warning/1, warning/2, warning/3,
   error/1, error/2, error/3,
   critical/1, critical/2, critical/3,
-  alert/1, alert/2, alert/3,
-  reload_config/1
+  alert/1, alert/2, alert/3, load_config_file/1, print_state/0
 ]).
 
 %% gen_server callbacks
--export([init/1,init/0,
+-export([init/1,
   handle_call/3,
   handle_cast/2,
   handle_info/2,
@@ -36,15 +35,12 @@
 -include("erlog_records.hrl").
 
 start_link() ->
+  process_flag(trap_exit, true),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 start_link(ConfigFile) ->
+  process_flag(trap_exit, true),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [ConfigFile], []).
-
-%%%-------------------------------------------------------------------
-
-reload_config(ConfigFile) ->
-  gen_server:call(?SERVER, {reload, ConfigFile}).
 
 %%%-------------------------------------------------------------------
 
@@ -59,38 +55,33 @@ log(Level, Logger, Msg, Data) ->
 
 %%%-------------------------------------------------------------------
 
-init() ->
+init([]) ->
   Rec = #erlog{},
   Rec2 = Rec#erlog{formatters = [#formatter{}], handlers = [#console_handler{}]},
-  {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
+  erlang:send_after(?ROLLER_DELAY, self(), roll_log),
   {ok, Rec2}.
 
-init(ConfigFile) ->
-  file:make_dir("misc"),
-  {ok, _} = dets:open_file(?DB_NAME, [{file, ?DB_FILE}, {type, set}]),
-  Ret = config_loader:load_config(ConfigFile),
-  {ok, Ret}.
+%%%-------------------------------------------------------------------
 
-handle_call({reload, ConfigFile}, _From, _Config) ->
-  case config_loader:load_config(ConfigFile) of
-    {error, invalid_config_file_detected} ->
-      {reply, {error, invalid_config_file_detected}, invalid_config_file_detected};
-    _ ->
-      {reply, ok, config_loader:load_config(ConfigFile)}
-  end;
+handle_call({reload_config, ConfigFile}, _From, Config) ->
+  NewState = config_loader:load_config(ConfigFile),
+  {reply, ok, NewState};
+
+handle_call(print_state, From, Config) ->
+  {reply, {ok, Config}, Config};
 
 handle_call(_Request, _From, Config) ->
   {reply, ok, Config}.
 
 handle_cast({log, Msg, Data}, Config) ->
   {ok, Rec} = Config,
-  log_writer:writelog(Msg, Data, Rec),
-  {noreply, Config};
+  log_writer:writelog(none, Rec, {{Msg, Data}, make_ref()}),
+  {noreply, {ok, Rec}};
 
 handle_cast({log, Level, Msg, Data}, Config) ->
   {ok, Rec} = Config,
-  log_writer:writelog(Level, Msg, Data, Rec),
-  {noreply, Config};
+  log_writer:writelog(Level, Rec, {{Msg, Data}, make_ref()}),
+  {noreply, {ok, Rec}};
 
 handle_cast({log, _Logger, _Level, _Msg, _Data}, Config) ->
   %%Not Yet Implemented
@@ -100,6 +91,15 @@ handle_cast({log, _Logger, _Level, _Msg, _Data}, Config) ->
 handle_cast(_Request, Config) ->
   {noreply, Config}.
 
+handle_info(roll_log, Config) ->
+  Rec = case Config of
+    {ok, Rec} -> Rec;
+    Rec -> Rec
+  end,
+  Handlers = Rec#erlog.handlers,
+  log_writer:rotatelog(Handlers),
+  erlang:send_after(?ROLLER_DELAY, self(), roll_log),
+  {noreply, {ok, Rec}};
 
 handle_info(_Info, Config) ->
   {noreply, Config}.
@@ -140,21 +140,21 @@ warning(Msg) ->
   log(warning, Msg, []).
 
 warning(Msg, Data) ->
-  log(info, Msg, Data).
+  log(warning, Msg, Data).
 
 warning(Logger, Msg, Data) ->
-  log(info, Logger, Msg, Data).
+  log(warning, Logger, Msg, Data).
 
 %%%-------------------------------------------------------------------
 
 error(Msg) ->
-  log(alert, Msg, []).
+  log(error, Msg, []).
 
 error(Msg, Data) ->
-  log(info, Msg, Data).
+  log(error, Msg, Data).
 
 error(Logger, Msg, Data) ->
-  log(info, Logger, Msg, Data).
+  log(error, Logger, Msg, Data).
 
 
 %%%-------------------------------------------------------------------
@@ -178,3 +178,13 @@ alert(Msg, Data) ->
 
 alert(Logger, Msg, Data) ->
   log(alert, Logger, Msg, Data).
+
+%%%-------------------------------------------------------------------
+
+load_config_file(ConfigFile) ->
+  gen_server:call(?SERVER, {reload_config, ConfigFile}).
+
+%%%-------------------------------------------------------------------
+
+print_state() ->
+  gen_server:call(?SERVER, print_state).

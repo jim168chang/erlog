@@ -24,5 +24,17 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+  RestartStategy = one_for_one,
+  MaxRestarts = 5,
+  MaxSecondsBetweenRestarts = 10,
+
+  SupFlags = {RestartStategy, MaxRestarts, MaxSecondsBetweenRestarts},
+
+  Restart = permanent,
+  Shutdown = 1000,
+  Type = worker,
+
+  ErlogServerChildDef = {"Erlog Server", {erlog, start_link, []}, Restart, Shutdown, Type, [erlog]},
+  FileLoggerEventChildDef = {"File Logger", {file_logger, start_link, []}, Restart, Shutdown, Type, [file_logger]},
+  {ok, {SupFlags, [ErlogServerChildDef, FileLoggerEventChildDef]}}.
 

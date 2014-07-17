@@ -10,59 +10,41 @@
 -author("aardvocate").
 
 %% API
--export([writelog/3, writelog/4, find_oldest/3]).
+-export([writelog/3, find_oldest/3, find_last_rotated_file/2, get_msg_formatted/4, rotatelog/1]).
+
+%% comment this out when going live
+-compile(export_all).
 
 -include("erlog_records.hrl").
 -include_lib("kernel/include/file.hrl").
 
-writelog(Level, Msg, Data, Config) ->
-  Handlers = Config#erlog.handlers,
-  write_log(Level, Handlers, {Msg, Data}),
-  {ok, submitted}.
+writelog(Level, Config, ToLog) ->
+    Handlers = Config#erlog.handlers,
+    write_log(Level, Handlers, ToLog),
+    {ok, submitted}.
 
 %%%-------------------------------------------------------------------
 
-writelog(Msg, Data, Config) ->
-  write_log_nolevel(Msg, Data, Config),
-  {ok, submitted}.
+write_log(LogLevel, [#file_handler{} = H | Rest], ToLog) ->
+  file_logger:log(LogLevel, H, ToLog),
+  write_log(LogLevel, Rest, ToLog);
 
-%%%-------------------------------------------------------------------
+write_log(LogLevel, [#console_handler{} = H | Rest], ToLog) ->
+%%   #console_handler{formatter = #formatter{format = Format}, level = HandlerLevelNumber} = H,
+%%   LogLevelNumber = config_loader:level_term_to_number(LogLevel),
+%%   if
+%%     HandlerLevelNumber >= LogLevelNumber ->
+%%       {ToWrite, _Ref} = ToLog,
+%%       {ok, Str} = get_msg_formatted(Format, ToWrite, "", {LogLevelNumber}),
+%%       io:format(Str, []);
+%%     true ->
+%%       log_filtered_by_level
+%%   end,
+%%   %%erlog:successfully_logged(ToLog),
+  ok,
+  write_log(LogLevel, Rest, ToLog);
 
-write_log_nolevel(Msg, Data, Config) ->
-  Handlers = Config#erlog.handlers,
-  write_log(none, Handlers, {Msg, Data}).
-
-%%%-------------------------------------------------------------------
-
-write_log(LogLevel, [#console_handler{} = H | Rest], ToWrite) ->
-  #console_handler{formatter = #formatter{format = Format}, level = HandlerLevelNumber} = H,
-  LogLevelNumber = config_loader:level_term_to_number(LogLevel),
-  if
-    HandlerLevelNumber >= LogLevelNumber ->
-      {ok, Str} = get_msg_formatted(Format, ToWrite, "", {LogLevelNumber}),
-      io:format(Str, []);
-    true ->
-      log_filtered_by_level
-  end,
-  write_log(LogLevel, Rest, ToWrite);
-
-write_log(LogLevel, [#file_handler{} = H | Rest], ToWrite) ->
-  #file_handler{dir = Dir, file = File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = MaxFiles, size = Size} = H,
-  LogLevelNumber = config_loader:level_term_to_number(LogLevel),
-  if
-    HandlerLevelNumber >= LogLevelNumber ->
-      Filename = filename:join(Dir, File),
-      {ok, LogFileHandle} = file:open(Filename, [append]),
-      {ok, Str} = get_msg_formatted(Format, ToWrite, "", {LogLevelNumber}),
-      io:format(LogFileHandle, Str, []),
-      file:close(LogFileHandle),
-      rotate_log({File, Dir, Size, MaxFiles});
-    true ->
-      log_filtered_by_level
-  end,
-  write_log(LogLevel, Rest, ToWrite);
-
-write_log(_LogLevel, [], _ToWrite) ->
+write_log(LogLevel, [], ToLog) ->
   ok.
 
 %%%-------------------------------------------------------------------
@@ -98,37 +80,91 @@ get_msg_formatted([], _ToWrite, Str, _Others) ->
   {ok, Str}.
 
 %%%-------------------------------------------------------------------
+rotatelog([#file_handler{} = H | Rest]) ->
+  #file_handler{file = File, dir = Dir, size = Size, max_files = MaxFiles} = H,
+  rotate_log(File, Dir, Size, MaxFiles),
+  rotatelog(Rest);
 
-rotate_log({File, Dir, Size, MaxFiles}) ->
+rotatelog([_H | Rest]) ->
+  rotatelog(Rest);
+
+rotatelog([]) ->
+  ok.
+
+%%%-------------------------------------------------------------------
+
+rotate_log(File, Dir, Size, MaxFiles) ->
+  delete_old_files(File, Dir, MaxFiles),
+
   Filename = filename:join(Dir, File),
   {ok, FileInfo} = file:read_file_info(Filename),
   FileSize = FileInfo#file_info.size,
+
   if
     FileSize >= (Size * 1024) ->
-      Ms = case dets:lookup(?DB_NAME, ?DB_KEY) of
-        [] -> 1;
-        [{_Key, {ok, Val}}] -> Val
-      end,
-
-      {ok, [H | Rest]} = file:list_dir(Dir),
-      CompareMax = MaxFiles - 1,
-
-      if
-        length(Rest) >= CompareMax ->
-          {ok, HInfo} = file:read_file_info(filename:join(Dir, H)),
-          Modified = HInfo#file_info.mtime,
-          {ok, {OldestFile, _Mod}} = find_oldest(Dir, Rest, {filename:join(Dir, H), Modified}),
-          file:delete(OldestFile);
-        true ->
-          ok
-      end,
-      file:copy(Filename, filename:join(Dir, lists:flatten(io_lib:format("erlog.~p", [Ms])))),
-      file:delete(Filename),
-      file:write_file(Filename, "", [append]),
-      dets:insert(?DB_NAME, [{?DB_KEY, {ok, Ms + 1}}]);
+      {ok, Dirs} = file:list_dir(Dir),
+      Ms = find_last_rotated_file(Dirs, 0) + 1,
+      MsString = lists:flatten(io_lib:format("~p", [Ms])),
+      To = string:concat(string:concat(Filename, "."), MsString),
+      file:copy(Filename, To),
+      file:write_file(Filename, "");
     true ->
-      do_nothing
+      ok
   end.
+
+%%%-------------------------------------------------------------------
+
+find_files_starting_with(File, [H | Files], Acc) ->
+  case string:str(H, File) of
+    0 ->
+      find_files_starting_with(File, Files, Acc);
+    _ ->
+      find_files_starting_with(File, Files, [H | Acc])
+  end;
+
+find_files_starting_with(File, [], Acc) ->
+  Acc.
+
+delete_old_files(File, Dir, MaxFiles) ->
+  %%CompareMax = MaxFiles - 1,
+  {ok, Files} = file:list_dir(Dir),
+  [H | Rest] = find_files_starting_with(File, Files, []),
+
+  if
+    length(Rest) >= MaxFiles ->
+      {ok, HInfo} = file:read_file_info(filename:join(Dir, H)),
+      Modified = HInfo#file_info.mtime,
+      {ok, {OldestFile, _Mod}} = find_oldest(Dir, Rest, {filename:join(Dir, H), Modified}),
+      case string:str(OldestFile, "log/") of
+        0 ->
+          file:delete(filename:join(Dir, OldestFile));
+        _ ->
+          file:delete(OldestFile)
+      end;
+    true ->
+      ok
+  end.
+
+%%%-------------------------------------------------------------------
+
+find_last_rotated_file([H | Files], Filenumber) ->
+  NewFileNumber = case filename:extension(H) of
+    ".log" ->
+      Filenumber;
+    Val ->
+      {FN, _} = string:to_integer(string:substr(Val, 2)),
+      NewFN = if
+        FN > Filenumber ->
+          FN;
+        true ->
+          Filenumber
+      end,
+      NewFN
+  end,
+  find_last_rotated_file(Files, NewFileNumber);
+
+find_last_rotated_file([], Filenumber) ->
+  Filenumber.
 
 %%%-------------------------------------------------------------------
 

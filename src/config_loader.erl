@@ -17,6 +17,7 @@
 -include("erlog_records.hrl").
 
 load_config(ConfigFile) ->
+  file_logger:add_handler(),
   case file:consult(ConfigFile) of
     {ok, [Result | _]} ->
       Rec = #erlog{},
@@ -87,6 +88,7 @@ load_fh_record(FHConfig, Rec) ->
       error("Invalid Config Detected. Max files must be greater than 1");
     true ->
       FileHandler = #file_handler{name = Name, level = Level, formatter = Formatter, file = File, dir = Dir, size = Size, max_files = MaxFiles},
+      file_logger:add_log_file(filename:join(Dir, File)),
       Handlers = Rec#erlog.handlers,
       Rec#erlog{handlers = [FileHandler | Handlers]}
   end.
