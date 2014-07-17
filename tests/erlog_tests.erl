@@ -25,58 +25,44 @@ test_find_oldest() ->
   %%OldestFile = "Makefile",
   io:format("passed~n").
 
-test_write_log() ->
-  io:format("Testing log_writer:writelog/3 - "),
-  K = 2,
-  erlog:info("Hello World: ~p~n", [K]),
-  Me = {{name, "Olusegun Akintayo"}, {age, 21}, {sex, "Male"}},
-  erlog:info("Me: ~p~n", [Me]),
+test_find_last_rotated_log_file() ->
+  io:format("Testing log_writer:find_last_rotated_file/2 - "),
+  {ok, Dirs} = file:list_dir("logs"),
+  Filenumber = log_writer:find_last_rotated_file(Dirs, 0),
+  %%Filenumber = 2,
+  io:format("passed~n").
 
-  erlog:info(debug, "Me Again: ~p~n", [Me]),
+test_get_msg_formatted() ->
+  io:format("Testing log_writer:get_msg_formatted/4 - "),
+  DateStr = log_writer:get_msg_formatted([date | []], {"Hello ~p", [1011001]}, "", {64}),
+  DateStr = {ok,"2014-7-17"},
+  TimeStr = log_writer:get_msg_formatted([time | []], {"Hello ~p", [1011001]}, "", {64}),
+  %%TimeStr = {ok, "22:2:26"},
+  LevelStrDebug = log_writer:get_msg_formatted([level | []], {"Hello ~p", [1011001]}, "", {64}),
+  LevelStrNone= log_writer:get_msg_formatted([level | []], {"Hello ~p", [1011001]}, "", {0}),
+  LevelStrDebug = {ok, "debug"},
+  LevelStrNone = {ok, "none"},
+
+  MessageStr = log_writer:get_msg_formatted([message | []], {"Hello ~p", [1011001]}, "", {64}),
+  MessageStr = {ok, "Hello 1011001"},
+
+  Format = [date, " [", level, "] - ", message, "~n"],
+
+  MessageStr2 = log_writer:get_msg_formatted(Format, {"Hello ~p", [1011001]}, "", {64}),
+
+  MessageStr2 = {ok, "2014-7-17 [debug] - Hello 1011001\n"},
 
   io:format("passed~n").
 
-test_config_loader_load_config() ->
-  io:format("Testing config_loader:load_config/0 - "),
-  Rec = config_loader:load_config("conf/default.conf"),
-  case Rec of
-    {error, invalid_config_file_detected} -> io:format("Failed. ~p~n", [Rec]);
-    _ ->
-      {ok, Config} = Rec,
-      1 = length(Config#erlog.formatters),
-      [Formatter | _Rest] = Config#erlog.formatters,
-      console_formatter = Formatter#formatter.name,
-      5 = length(Config#erlog.handlers),
-      [FileHandler | [FileHandler2 | [ConsoleHandler | [ConsoleHandler2 | Rest]] ]] = Config#erlog.handlers,
-      true = is_list(Rest),
-      "MFH" = FileHandler#file_handler.name,
-      "MFH2" = FileHandler2#file_handler.name,
-      ?ERROR = ConsoleHandler2#console_handler.level,
-      ?NONE = ConsoleHandler#console_handler.level,
-      ?DEBUG = FileHandler#file_handler.level,
-      FileFormatter = FileHandler#file_handler.formatter,
-      ConsoleFormatter = ConsoleHandler2#console_handler.formatter,
-      default_f = ConsoleFormatter#formatter.name,
-      console_formatter = FileFormatter#formatter.name,
-
-      {error, invalid_config_file_detected} = config_loader:load_config("./non_existent.conf"),
-      io:format("passed~n")
-  end.
-
-test_erlog_reload_config() ->
-  io:format("Testing erlog:reload_config/0 - "),
-  {error, RetVal} = erlog:reload_config("conf/default2.conf"),
-  io:format("Loaded Config: ~p~n", [RetVal]),
+test_rotate_log() ->
+  io:format("Testing log_writer:rotate_log/4 - "),
+  ok = log_writer:rotate_log("erlog_error.log", "logs", 4, 10),
   io:format("passed~n").
 
 tests() ->
   io:format("~n~n------- Starting Tests -------~n~n"),
-  erlog:start_link("conf/default.conf"),
-  erlog:info("Starting Tests @ ~p~n", [now()]),
+  test_find_last_rotated_log_file(),
   test_find_oldest(),
-  test_config_loader_load_config(),
-  test_write_log(),
-  erlog:reload_config("conf/default.conf"),
-  erlog:info("Stopping Tests @ ~p~n", [now()]),
-  test_erlog_reload_config(),
+  test_get_msg_formatted(),
+  test_rotate_log(),
   ok.
