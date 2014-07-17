@@ -1,12 +1,14 @@
-all: 
-	rebar compile
-	#@erl -noshell -pa './deps/bitcask/ebin' -pa './ebin' -s sample start
+all:
+	rebar get-deps clean compile
 
 build:
 	rebar clean compile
 
-run:
-	@erl -noshell -pa './ebin' -s media_uploader start
+run: build
+	@erl -noshell -pa './ebin' -eval "application:start(erlog)"
+
+run_shell: build
+	@erl -pa './ebin' -eval "application:start(erlog)"
 
 clean:
 	rebar clean
