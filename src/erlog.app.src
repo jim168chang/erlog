@@ -2,8 +2,8 @@
   [
     {description, "Simple Logging Framework For Erlang"},
     {vsn, "1.0"},
-    {modules, [erlog_app, erlog_sup, erlog, config_loader, file_logger, log_writer]},
-    {registered, [erlog, file_logger, erlog_sup]},
+    {modules, [erlog_app, erlog_sup, erlog, config_loader, file_logger, console_logger, log_writer]},
+    {registered, [erlog, file_logger, console_loger, erlog_sup]},
     {applications, [kernel, stdlib]},
     {mod, {erlog_app, []}},
     {env, []},

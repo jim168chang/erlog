@@ -5,10 +5,10 @@ build:
 	rebar clean compile
 
 run: build
-	@erl -noshell -pa './ebin' -eval "application:start(erlog)"
+	@erl -noshell -pa './ebin' -s erlog start
 
 run_shell: build
-	@erl -pa './ebin' -eval "application:start(erlog)"
+	@erl -pa './ebin' -s erlog start
 
 clean:
 	rebar clean

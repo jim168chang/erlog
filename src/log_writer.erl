@@ -19,33 +19,23 @@
 -include_lib("kernel/include/file.hrl").
 
 writelog(Level, Config, ToLog) ->
-    Handlers = Config#erlog.handlers,
-    write_log(Level, Handlers, ToLog),
-    {ok, submitted}.
+  FileHandlers = Config#erlog.file_handlers,
+  write_file_log(Level, FileHandlers, ToLog),
+  write_console_log(Level, Config#erlog.console_handler, ToLog),
+  {ok, submitted}.
 
 %%%-------------------------------------------------------------------
 
-write_log(LogLevel, [#file_handler{} = H | Rest], ToLog) ->
+write_file_log(LogLevel, [#file_handler{} = H | Rest], ToLog) ->
   file_logger:log(LogLevel, H, ToLog),
-  write_log(LogLevel, Rest, ToLog);
+  write_file_log(LogLevel, Rest, ToLog);
 
-write_log(LogLevel, [#console_handler{} = H | Rest], ToLog) ->
-%%   #console_handler{formatter = #formatter{format = Format}, level = HandlerLevelNumber} = H,
-%%   LogLevelNumber = config_loader:level_term_to_number(LogLevel),
-%%   if
-%%     HandlerLevelNumber >= LogLevelNumber ->
-%%       {ToWrite, _Ref} = ToLog,
-%%       {ok, Str} = get_msg_formatted(Format, ToWrite, "", {LogLevelNumber}),
-%%       io:format(Str, []);
-%%     true ->
-%%       log_filtered_by_level
-%%   end,
-%%   %%erlog:successfully_logged(ToLog),
-  ok,
-  write_log(LogLevel, Rest, ToLog);
-
-write_log(LogLevel, [], ToLog) ->
+write_file_log(_LogLevel, [], _ToLog) ->
   ok.
+
+write_console_log(LogLevel, #console_handler{} = H, ToLog) ->
+  io:format("~p", [console_logger:log(LogLevel, H, ToLog)]).
+
 
 %%%-------------------------------------------------------------------
 
@@ -119,10 +109,15 @@ find_files_starting_with(File, [H | Files], Acc) ->
     0 ->
       find_files_starting_with(File, Files, Acc);
     _ ->
-      find_files_starting_with(File, Files, [H | Acc])
+      if
+        File =:= H ->
+          find_files_starting_with(File, Files, Acc);
+        true ->
+          find_files_starting_with(File, Files, [H | Acc])
+      end
   end;
 
-find_files_starting_with(File, [], Acc) ->
+find_files_starting_with(_File, [], Acc) ->
   Acc.
 
 delete_old_files(File, Dir, MaxFiles) ->
@@ -149,18 +144,18 @@ delete_old_files(File, Dir, MaxFiles) ->
 
 find_last_rotated_file([H | Files], Filenumber) ->
   NewFileNumber = case filename:extension(H) of
-    ".log" ->
-      Filenumber;
-    Val ->
-      {FN, _} = string:to_integer(string:substr(Val, 2)),
-      NewFN = if
-        FN > Filenumber ->
-          FN;
-        true ->
-          Filenumber
-      end,
-      NewFN
-  end,
+                    ".log" ->
+                      Filenumber;
+                    Val ->
+                      {FN, _} = string:to_integer(string:substr(Val, 2)),
+                      NewFN = if
+                                FN > Filenumber ->
+                                  FN;
+                                true ->
+                                  Filenumber
+                              end,
+                      NewFN
+                  end,
   find_last_rotated_file(Files, NewFileNumber);
 
 find_last_rotated_file([], Filenumber) ->

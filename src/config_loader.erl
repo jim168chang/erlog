@@ -17,9 +17,9 @@
 -include("erlog_records.hrl").
 
 load_config(ConfigFile) ->
-  file_logger:add_handler(),
   case file:consult(ConfigFile) of
     {ok, [Result | _]} ->
+      file_logger:clear_state(),
       Rec = #erlog{},
       {erlog, Config} = Result,
       load_record(Config, Rec);
@@ -89,8 +89,8 @@ load_fh_record(FHConfig, Rec) ->
     true ->
       FileHandler = #file_handler{name = Name, level = Level, formatter = Formatter, file = File, dir = Dir, size = Size, max_files = MaxFiles},
       file_logger:add_log_file(filename:join(Dir, File)),
-      Handlers = Rec#erlog.handlers,
-      Rec#erlog{handlers = [FileHandler | Handlers]}
+      Handlers = Rec#erlog.file_handlers,
+      Rec#erlog{file_handlers = [FileHandler | Handlers]}
   end.
 
 %%-----------------------------------------------------------------
@@ -114,8 +114,7 @@ load_ch_record(CHConfig, Rec) ->
               end,
 
   ConsoleHandler = #console_handler{name = Name, level = Level, formatter = Formatter},
-  Handlers = Rec#erlog.handlers,
-  Rec#erlog{handlers = [ConsoleHandler | Handlers]}.
+  Rec#erlog{console_handler = ConsoleHandler}.
 
 %%-----------------------------------------------------------------
 

@@ -12,7 +12,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, start_link/0,
+-export([start_link/1, start_link/0, start/0,
   log/2, log/3, log/4,
   debug/1, debug/2, debug/3,
   info/1, info/2, info/3,
@@ -33,6 +33,12 @@
 -define(SERVER, ?MODULE).
 
 -include("erlog_records.hrl").
+
+start() ->
+  application:start(erlog),
+  file_logger:add_handler(),
+  console_logger:add_handler(),
+  ok.
 
 start_link() ->
   process_flag(trap_exit, true),
@@ -57,29 +63,35 @@ log(Level, Logger, Msg, Data) ->
 
 init([]) ->
   Rec = #erlog{},
-  Rec2 = Rec#erlog{formatters = [#formatter{}], handlers = [#console_handler{}]},
+  Rec2 = Rec#erlog{formatters = [#formatter{}], console_handler = #console_handler{}},
   erlang:send_after(?ROLLER_DELAY, self(), roll_log),
   {ok, Rec2}.
 
 %%%-------------------------------------------------------------------
 
-handle_call({reload_config, ConfigFile}, _From, Config) ->
+handle_call({reload_config, ConfigFile}, _From, _Config) ->
   NewState = config_loader:load_config(ConfigFile),
   {reply, ok, NewState};
 
-handle_call(print_state, From, Config) ->
+handle_call(print_state, _From, Config) ->
   {reply, {ok, Config}, Config};
 
 handle_call(_Request, _From, Config) ->
   {reply, ok, Config}.
 
 handle_cast({log, Msg, Data}, Config) ->
-  {ok, Rec} = Config,
+  Rec = case Config of
+          {ok, Rec2} -> Rec2;
+          Rec2 -> Rec2
+        end,
   log_writer:writelog(none, Rec, {{Msg, Data}, make_ref()}),
   {noreply, {ok, Rec}};
 
 handle_cast({log, Level, Msg, Data}, Config) ->
-  {ok, Rec} = Config,
+  Rec = case Config of
+          {ok, Rec2} -> Rec2;
+          Rec2 -> Rec2
+        end,
   log_writer:writelog(Level, Rec, {{Msg, Data}, make_ref()}),
   {noreply, {ok, Rec}};
 
@@ -93,10 +105,10 @@ handle_cast(_Request, Config) ->
 
 handle_info(roll_log, Config) ->
   Rec = case Config of
-    {ok, Rec} -> Rec;
-    Rec -> Rec
+    {ok, Rec2} -> Rec2;
+    Rec2 -> Rec2
   end,
-  Handlers = Rec#erlog.handlers,
+  Handlers = Rec#erlog.file_handlers,
   log_writer:rotatelog(Handlers),
   erlang:send_after(?ROLLER_DELAY, self(), roll_log),
   {noreply, {ok, Rec}};

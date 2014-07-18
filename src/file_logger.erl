@@ -13,7 +13,7 @@
 
 %% API
 -export([start_link/0,
-  add_handler/0, log/3, add_log_file/1]).
+  add_handler/0, log/3, add_log_file/1, clear_state/0]).
 
 %% gen_event callbacks
 -export([init/1,
@@ -26,7 +26,6 @@
 -define(SERVER, ?MODULE).
 
 -include("erlog_records.hrl").
--include_lib("kernel/include/file.hrl").
 
 start_link() ->
   process_flag(trap_exit, true),
@@ -38,6 +37,9 @@ add_handler() ->
 init([]) ->
   {ok, []}.
 
+clear_state() ->
+  gen_event:call(?SERVER, ?MODULE, clear_state).
+
 add_log_file(File) ->
   gen_event:notify(?SERVER, {add_file, File}).
 
@@ -45,8 +47,7 @@ log(LogLevel, FileHandler, Msg) ->
   gen_event:notify(?SERVER, {log, Msg, LogLevel, FileHandler}).
 
 handle_event({log, _Msg, _LogLevel, #file_handler{}} = Event, State) ->
-  Files = State,
-  log_to_file(Files, Event),
+  log_to_file(State, Event),
   {ok, State};
 
 handle_event({add_file, File}, State) ->
@@ -56,6 +57,9 @@ handle_event({add_file, File}, State) ->
 handle_event(_Event, State) ->
   {ok, State}.
 
+handle_call(clear_state, _State) ->
+  State2 = [],
+  {ok, cleared, State2};
 
 handle_call(_Request, State) ->
   Reply = ok,
@@ -75,7 +79,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-log_to_file([H | Files], {log, Msg, LogLevel, #file_handler{dir = Dir, file = File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = MaxFiles, size = Size}} = Event) ->
+log_to_file([H | Files], {log, Msg, LogLevel, #file_handler{dir = _Dir, file = _File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = _MaxFiles, size = _Size}} = Event) ->
   LogLevelNumber = config_loader:level_term_to_number(LogLevel),
   if
     HandlerLevelNumber >= LogLevelNumber ->

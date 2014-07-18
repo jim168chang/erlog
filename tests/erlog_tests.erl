@@ -35,7 +35,7 @@ test_find_last_rotated_log_file() ->
 test_get_msg_formatted() ->
   io:format("Testing log_writer:get_msg_formatted/4 - "),
   DateStr = log_writer:get_msg_formatted([date | []], {"Hello ~p", [1011001]}, "", {64}),
-  DateStr = {ok,"2014-7-17"},
+  %%DateStr = {ok,"2014-7-17"},
   TimeStr = log_writer:get_msg_formatted([time | []], {"Hello ~p", [1011001]}, "", {64}),
   %%TimeStr = {ok, "22:2:26"},
   LevelStrDebug = log_writer:get_msg_formatted([level | []], {"Hello ~p", [1011001]}, "", {64}),
@@ -46,11 +46,11 @@ test_get_msg_formatted() ->
   MessageStr = log_writer:get_msg_formatted([message | []], {"Hello ~p", [1011001]}, "", {64}),
   MessageStr = {ok, "Hello 1011001"},
 
-  Format = [date, " [", level, "] - ", message, "~n"],
+  Format = ["[", level, "] - ", message, "~n"],
 
   MessageStr2 = log_writer:get_msg_formatted(Format, {"Hello ~p", [1011001]}, "", {64}),
 
-  MessageStr2 = {ok, "2014-7-17 [debug] - Hello 1011001\n"},
+  MessageStr2 = {ok, "[debug] - Hello 1011001\n"},
 
   io:format("passed~n").
 

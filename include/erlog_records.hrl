@@ -33,4 +33,4 @@
 -record(console_handler, {name=?DEFAULT_CONSOLE_HANDLER_NAME, level=?NONE, formatter=#formatter{}}).
 -record(file_handler, {name=?DEFAULT_FILE_HANDLER_NAME, level=?NONE, file=?DEFAULT_FILE, dir=?DEFAULT_DIR,
                         size=?DEFAULT_SIZE, max_files=?DEFAULT_MAX_FILES, formatter=#formatter{}}).
--record(erlog, {formatters=[], handlers=[]}).
+-record(erlog, {formatters=[], console_handler, file_handlers=[]}).

@@ -36,5 +36,7 @@ init([]) ->
 
   ErlogServerChildDef = {"Erlog Server", {erlog, start_link, []}, Restart, Shutdown, Type, [erlog]},
   FileLoggerEventChildDef = {"File Logger", {file_logger, start_link, []}, Restart, Shutdown, Type, [file_logger]},
-  {ok, {SupFlags, [ErlogServerChildDef, FileLoggerEventChildDef]}}.
+  ConsoleLoggerChildDef = {"Console Logger", {console_logger, start_link, []}, Restart, Shutdown, Type, [console_logger]},
+
+  {ok, {SupFlags, [ErlogServerChildDef, FileLoggerEventChildDef, ConsoleLoggerChildDef]}}.
 
