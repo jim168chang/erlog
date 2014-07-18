@@ -58,7 +58,7 @@ handle_call({log, Msg, LogLevel, #console_handler{formatter = #formatter{format 
   Message = if
     HandlerLevelNumber >= LogLevelNumber ->
       {ToWrite, _Ref} = Msg,
-      {ok, Str} = log_writer:get_msg_formatted(Format, ToWrite, "", {LogLevelNumber});
+      log_writer:get_msg_formatted(Format, ToWrite, "", {LogLevelNumber});
     true ->
       log_filtered_by_level
   end,
