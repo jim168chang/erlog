@@ -30,7 +30,7 @@
 -define(ROLLER_DELAY, 5000).
 
 -record(formatter, {name=?DEFAULT_FORMATTER_NAME, format=?DEFAULT_FORMAT}).
--record(console_handler, {name=?DEFAULT_CONSOLE_HANDLER_NAME, level=?NONE, formatter=#formatter{}}).
--record(file_handler, {name=?DEFAULT_FILE_HANDLER_NAME, level=?NONE, file=?DEFAULT_FILE, dir=?DEFAULT_DIR,
+-record(console_handler, {name=?DEFAULT_CONSOLE_HANDLER_NAME, level=?DEBUG, formatter=#formatter{}}).
+-record(file_handler, {name=?DEFAULT_FILE_HANDLER_NAME, level=?DEBUG, file=?DEFAULT_FILE, dir=?DEFAULT_DIR,
                         size=?DEFAULT_SIZE, max_files=?DEFAULT_MAX_FILES, formatter=#formatter{}}).
 -record(erlog, {formatters=[], console_handler, file_handlers=[]}).
