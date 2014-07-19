@@ -33,11 +33,11 @@ write_file_log(LogLevel, [#file_handler{} = H | Rest], ToLog) ->
 write_file_log(_LogLevel, [], _ToLog) ->
   ok.
 
-write_console_log(_LogLevel, _, _ToLog) ->
-  ok;
-
 write_console_log(LogLevel, #console_handler{} = H, ToLog) ->
-  io:format("~p", [console_logger:log(LogLevel, H, ToLog)]).
+  io:format("~p", [console_logger:log(LogLevel, H, ToLog)]);
+
+write_console_log(_LogLevel, _, _ToLog) ->
+  ok.
 
 
 %%%-------------------------------------------------------------------
