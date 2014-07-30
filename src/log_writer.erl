@@ -90,19 +90,22 @@ rotate_log(File, Dir, Size, MaxFiles) ->
   delete_old_files(File, Dir, MaxFiles),
 
   Filename = filename:join(Dir, File),
-  {ok, FileInfo} = file:read_file_info(Filename),
-  FileSize = FileInfo#file_info.size,
-
-  if
-    FileSize >= (Size * 1024) ->
-      {ok, Dirs} = file:list_dir(Dir),
-      Ms = find_last_rotated_file(Dirs, 0) + 1,
-      MsString = lists:flatten(io_lib:format("~p", [Ms])),
-      To = string:concat(string:concat(Filename, "."), MsString),
-      file:copy(Filename, To),
-      file:write_file(Filename, "");
-    true ->
-      ok
+  case file:read_file_info(Filename) of
+    {ok, FileInfo} ->
+      FileSize = FileInfo#file_info.size,
+      if
+        FileSize >= (Size * 1024) ->
+          {ok, Dirs} = file:list_dir(Dir),
+          Ms = find_last_rotated_file(Dirs, 0) + 1,
+          MsString = lists:flatten(io_lib:format("~p", [Ms])),
+          To = string:concat(string:concat(Filename, "."), MsString),
+          file:copy(Filename, To),
+          file:write_file(Filename, "");
+        true ->
+          ok
+      end;
+    _ ->
+      do_nothing
   end.
 
 %%%-------------------------------------------------------------------
@@ -126,21 +129,24 @@ find_files_starting_with(_File, [], Acc) ->
 delete_old_files(File, Dir, MaxFiles) ->
   %%CompareMax = MaxFiles - 1,
   {ok, Files} = file:list_dir(Dir),
-  [H | Rest] = find_files_starting_with(File, Files, []),
-
-  if
-    length(Rest) >= MaxFiles ->
-      {ok, HInfo} = file:read_file_info(filename:join(Dir, H)),
-      Modified = HInfo#file_info.mtime,
-      {ok, {OldestFile, _Mod}} = find_oldest(Dir, Rest, {filename:join(Dir, H), Modified}),
-      case string:str(OldestFile, "log/") of
-        0 ->
-          file:delete(filename:join(Dir, OldestFile));
-        _ ->
-          file:delete(OldestFile)
+  case find_files_starting_with(File, Files, []) of
+    [H | Rest] ->
+      if
+        length(Rest) >= MaxFiles ->
+          {ok, HInfo} = file:read_file_info(filename:join(Dir, H)),
+          Modified = HInfo#file_info.mtime,
+          {ok, {OldestFile, _Mod}} = find_oldest(Dir, Rest, {filename:join(Dir, H), Modified}),
+          case string:str(OldestFile, "log/") of
+            0 ->
+              file:delete(filename:join(Dir, OldestFile));
+            _ ->
+              file:delete(OldestFile)
+          end;
+        true ->
+          ok
       end;
-    true ->
-      ok
+    _ ->
+      do_nothing
   end.
 
 %%%-------------------------------------------------------------------

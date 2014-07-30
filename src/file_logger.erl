@@ -47,7 +47,7 @@ log(LogLevel, FileHandler, Msg) ->
   gen_event:notify(?SERVER, {log, Msg, LogLevel, FileHandler}).
 
 handle_event({log, _Msg, _LogLevel, #file_handler{}} = Event, State) ->
-  log_to_file(State, Event),
+  log_to_file(Event),
   {ok, State};
 
 handle_event({add_file, File}, State) ->
@@ -79,19 +79,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-log_to_file([H | Files], {log, Msg, LogLevel, #file_handler{dir = _Dir, file = _File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = _MaxFiles, size = _Size}} = Event) ->
+log_to_file({log, Msg, LogLevel, #file_handler{dir = Dir, file = File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = _MaxFiles, size = _Size, name = Name}} = Event) ->
   LogLevelNumber = config_loader:level_term_to_number(LogLevel),
   if
     HandlerLevelNumber >= LogLevelNumber ->
-      {ok, LogFileHandle} = file:open(H, [append]),
+      {ok, LogFileHandle} = file:open(filename:join(Dir, File), [append]),
       {ToWrite, _Ref} = Msg,
       {ok, Str} = log_writer:get_msg_formatted(Format, ToWrite, "", {LogLevelNumber}),
       io:format(LogFileHandle, Str, []),
       file:close(LogFileHandle);
     true ->
       log_filtered_by_level
-  end,
-  log_to_file(Files, Event);
-
-log_to_file([], _Event) ->
-  ok.
+  end.

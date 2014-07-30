@@ -64,7 +64,7 @@ log(Level, Logger, Msg, Data) ->
 init([]) ->
   Rec = #erlog{},
   Rec2 = Rec#erlog{formatters = [#formatter{}], console_handler = #console_handler{}},
-  erlang:send_after(?ROLLER_DELAY, self(), roll_log),
+  erlang:send_after(0, self(), roll_log),
   {ok, Rec2}.
 
 %%%-------------------------------------------------------------------
