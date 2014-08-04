@@ -79,7 +79,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-log_to_file({log, Msg, LogLevel, #file_handler{dir = Dir, file = File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = _MaxFiles, size = _Size, name = Name}} = Event) ->
+log_to_file({log, Msg, LogLevel, #file_handler{dir = Dir, file = File, formatter = #formatter{format = Format}, level = HandlerLevelNumber, max_files = _MaxFiles, size = _Size, name = _Name}} = _Event) ->
   LogLevelNumber = config_loader:level_term_to_number(LogLevel),
   if
     HandlerLevelNumber >= LogLevelNumber ->
